@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+pydantic
+langchain
+langchain-core
+langchain-community
+langchain-groq
+langchain-huggingface
+langgraph
+faiss-cpu
+sentence-transformers
+pypdf
+tavily-python
+langsmith
