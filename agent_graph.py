@@ -72,17 +72,18 @@ def load_retriever():
     )
 
 
-retriever = load_retriever()
+def get_oil_gas_retriever_tool():
+    retriever = load_retriever()
 
-oil_gas_retriever_tool = create_retriever_tool(
-    retriever,
-    name="internal_oil_gas_document_retriever",
-    description=(
-        "Use this tool first for questions about internal oil and gas field reports, "
-        "drilling operations, production metrics, safety incidents, compliance controls, "
-        "equipment downtime, methane monitoring, and Houston field operations."
+    return create_retriever_tool(
+        retriever,
+        name="internal_oil_gas_document_retriever",
+        description=(
+            "Use this tool first for questions about internal oil and gas field reports, "
+            "drilling operations, production metrics, safety incidents, compliance controls, "
+            "equipment downtime, methane monitoring, and Houston field operations."
+        )
     )
-)
 
 
 @tool
@@ -103,6 +104,7 @@ def tavily_web_search(query: str) -> str:
 def retrieval_agent_node(state: OilGasState) -> Dict:
     query = state["current_query"]
 
+    oil_gas_retriever_tool = get_oil_gas_retriever_tool()
     internal_docs = oil_gas_retriever_tool.invoke(query)
 
     web_context = ""
@@ -445,9 +447,10 @@ def finalizer_node(state: OilGasState) -> Dict:
 def incident_root_cause_agent(incident: str) -> dict:
     """
     RAG-powered Incident Root Cause Analysis Agent.
-    Uses internal oil & gas documents first, then generates grounded RCA.
+    Loads FAISS retriever only when this endpoint is called.
     """
 
+    oil_gas_retriever_tool = get_oil_gas_retriever_tool()
     internal_docs = oil_gas_retriever_tool.invoke(incident)
 
     prompt = f"""
@@ -482,7 +485,6 @@ Return the answer in this exact structure:
         "retrieved_context": internal_docs,
         "analysis": response.content
     }
-
 # -----------------------------
 # Q&A Agentic RAG Graph
 # -----------------------------
