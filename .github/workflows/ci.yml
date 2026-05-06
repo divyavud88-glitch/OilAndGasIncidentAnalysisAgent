@@ -1,15 +1,12 @@
-name: FastAPI CI
+name: FastAPI CI/CD
 
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
 
 jobs:
-  build-test:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,3 +30,19 @@ jobs:
           TAVILY_API_KEY: dummy
           VECTORSTORE_PATH: vectorstore/faiss_index
         run: python -c "import app; print('FastAPI app imported successfully')"
+
+      - name: Deploy to EC2
+        if: success()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user/OilAndGasIncidentAnalysisAgent
+            git reset --hard
+            git pull origin master
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart oil-gas-agent
+            sudo systemctl status oil-gas-agent --no-pager
